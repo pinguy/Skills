@@ -9,9 +9,9 @@ These are operational skills rather than prompt snippets: each one tries to defi
 | Skill | Purpose |
 | --- | --- |
 | `blackboard` | Typed shared state for multi-model or multi-agent work, with provenance, ownership and verification. |
+| `chatterbox-tts-recovery` | Restore and verify the Chatterbox browser/OpenAI-compatible TTS stack using the canonical add-on repository. |
 | `council-blackboard` | Visible OpenClaw/Open WebUI council rooms backed by the typed blackboard. |
 | `invariant-guarded-debugging` | Debugging workflow that protects known-good state and tests falsifiable hypotheses. |
-| `openwebui-chatterbox-recovery` | Restore and verify Chatterbox TTS semantics after Open WebUI upgrades. |
 | `openwebui-regression-test` | Test Open WebUI through the real user-visible browser path rather than config-only checks. |
 | `privileged-operations` | Least-privilege Linux operations using `pkexec` for the narrow commands that actually require root. |
 | `qwen27-ground-check` | Use a local Qwen 27B-class model as a cautious second-model circuit breaker, not an oracle. |
@@ -57,6 +57,8 @@ Some skills still describe particular software stacks (for example Open WebUI or
 Live blackboards, council transcripts/state, lock files, backups, and `.env` files are intentionally excluded from this repository. The checked-in blackboard code creates runtime state as needed; do not commit an existing `blackboards/` directory from a working agent installation.
 
 The bundled Qwen ground-check wrapper uses only the Python standard library and expects an Ollama-compatible `/api/generate` endpoint. Council tooling additionally assumes an OpenClaw/Open WebUI installation and should be configured with the environment variables documented in that skill.
+
+The Chatterbox recovery skill deliberately does **not** duplicate backend source. Its canonical executable implementation is maintained in `pinguy/chatterbox-tts-addon`; the skill contains recovery invariants and acceptance checks only.
 
 ## Security note
 
