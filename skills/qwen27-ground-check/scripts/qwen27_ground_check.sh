@@ -1,9 +1,10 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+HERE="$(CDPATH= cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 MAX_TOKENS="${QWEN27_MAX_TOKENS:-48}"
 TEMP="${QWEN27_TEMP:-0.2}"
-WRAPPER="${QWEN27_WRAPPER:-${HOME}/.openclaw/workspace/scripts/qwen27_raw_chat.sh}"
+WRAPPER="${QWEN27_WRAPPER:-$HERE/qwen27_raw_chat.py}"
 
 if [[ "$#" -gt 0 ]]; then
   ISSUE="$*"
@@ -30,4 +31,8 @@ Task:
 
 Return final answer only, under 220 words, no thinking process."
 
-QWEN27_MAX_TOKENS="$MAX_TOKENS" QWEN27_TEMP="$TEMP" "$WRAPPER" "$PROMPT"
+if [[ "$WRAPPER" == *.py ]]; then
+  QWEN27_MAX_TOKENS="$MAX_TOKENS" QWEN27_TEMP="$TEMP" python3 "$WRAPPER" "$PROMPT"
+else
+  QWEN27_MAX_TOKENS="$MAX_TOKENS" QWEN27_TEMP="$TEMP" "$WRAPPER" "$PROMPT"
+fi
