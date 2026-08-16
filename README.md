@@ -52,6 +52,12 @@ Machine-specific paths and account identifiers are intentionally not included. S
 
 Some skills still describe particular software stacks (for example Open WebUI or a local Qwen checker). Treat those as reference implementations and adjust model IDs, service names and local paths for your environment.
 
+## Runtime data and local configuration
+
+Live blackboards, council transcripts/state, lock files, backups, and `.env` files are intentionally excluded from this repository. The checked-in blackboard code creates runtime state as needed; do not commit an existing `blackboards/` directory from a working agent installation.
+
+The bundled Qwen ground-check wrapper uses only the Python standard library and expects an Ollama-compatible `/api/generate` endpoint. Council tooling additionally assumes an OpenClaw/Open WebUI installation and should be configured with the environment variables documented in that skill.
+
 ## Security note
 
 `privileged-operations` deliberately requires `pkexec` for root elevation and keeps builds, downloads and exploratory work unprivileged. Review any skill before giving an agent write access to a machine.
