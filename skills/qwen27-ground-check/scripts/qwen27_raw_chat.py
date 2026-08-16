@@ -44,19 +44,29 @@ def main() -> int:
         return 2
 
     host = os.environ.get("OLLAMA_HOST", "http://127.0.0.1:11434").rstrip("/")
+    url = os.environ.get("OLLAMA_URL", f"{host}/api/generate")
     model = os.environ.get("QWEN27_MODEL", "qwen3-6-27b:latest")
     timeout = env_int("QWEN27_TIMEOUT", 180, 5, 3600)
     max_tokens = env_int("QWEN27_MAX_TOKENS", 48, 1, 4096)
+    num_ctx = env_int("QWEN27_NUM_CTX", 1024, 256, 1048576)
     temperature = env_float("QWEN27_TEMP", 0.2, 0.0, 2.0)
+    system_prompt = os.environ.get(
+        "QWEN27_SYSTEM",
+        "Return only the concise final answer. Do not expose hidden reasoning or scratchpad.",
+    )
 
+    # Some Qwen thinking builds can spend most of a tiny ground-check budget in
+    # hidden reasoning. Prefilling a closed empty think block has proved useful
+    # with those builds while keeping the final answer path raw and explicit.
     raw_prompt = (
         "<|im_start|>system\n"
-        "Return only the concise final answer. Do not expose hidden reasoning or scratchpad.\n"
+        f"{system_prompt}\n"
         "<|im_end|>\n"
         "<|im_start|>user\n"
         f"{prompt}\n"
         "<|im_end|>\n"
         "<|im_start|>assistant\n"
+        "<think>\n\n</think>\n\n"
     )
     payload = {
         "model": model,
@@ -66,11 +76,13 @@ def main() -> int:
         "options": {
             "num_predict": max_tokens,
             "temperature": temperature,
+            "num_ctx": num_ctx,
+            "stop": ["<|im_end|>", "<|endoftext|>"],
         },
     }
 
     request = urllib.request.Request(
-        f"{host}/api/generate",
+        url,
         data=json.dumps(payload).encode("utf-8"),
         headers={"Content-Type": "application/json"},
         method="POST",
@@ -101,7 +113,10 @@ def main() -> int:
         print("Ollama returned an empty final response", file=sys.stderr)
         return 1
     if output.startswith("<think>") or output.startswith("<analysis>"):
-        print("Ollama returned an unterminated reasoning block; refusing to treat it as a clean check", file=sys.stderr)
+        print(
+            "Ollama returned an unterminated reasoning block; refusing to treat it as a clean check",
+            file=sys.stderr,
+        )
         return 1
 
     print(output)
