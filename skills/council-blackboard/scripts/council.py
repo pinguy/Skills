@@ -24,9 +24,10 @@ BB = Path(
     )
 ).expanduser()
 PYTHON = os.environ.get("COUNCIL_PYTHON", sys.executable)
-WEBUI_MODEL = os.environ.get("COUNCIL_WEBUI_MODEL", "ornith-35b-vision:latest")
-WEBUI_MODEL_NAME = os.environ.get("COUNCIL_WEBUI_MODEL_NAME", "Ornith 35B Vision")
+WEBUI_MODEL = os.environ.get("COUNCIL_WEBUI_MODEL", "local-model:latest")
+WEBUI_MODEL_NAME = os.environ.get("COUNCIL_WEBUI_MODEL_NAME", "Local WebUI Model")
 WEBUI_BASE_URL = os.environ.get("OPENWEBUI_BASE_URL", "http://127.0.0.1:8080").rstrip("/")
+USER_WRITER_ID = os.environ.get("COUNCIL_USER_WRITER", "user/local-user")
 
 
 def _utc_stamp() -> str:
@@ -162,7 +163,7 @@ def initialise_board(topic: str, board: Path) -> None:
         "--goal",
         topic,
         "--model",
-        os.environ.get("COUNCIL_USER_WRITER", "user/local"),
+        USER_WRITER_ID,
         "--max-hops",
         os.environ.get("COUNCIL_MAX_HOPS", "8"),
     )
@@ -187,7 +188,7 @@ def _room_payload(topic: str, board: Path) -> tuple[dict[str, Any], dict[str, di
     intro = (
         f"Council topic: {topic}\n\n"
         f"Blackboard: {board}\n\n"
-        f"This room is shared working space for the local user, OpenClaw, and {WEBUI_MODEL_NAME}. "
+        f"This room is shared working space for the user, OpenClaw, and {WEBUI_MODEL_NAME}. "
         "Use the Council Blackboard tool for cross-model turns. Preserve claims, evidence, "
         "decisions, failed attempts, tests, and unresolved questions on the board."
     )
