@@ -5,23 +5,26 @@ description: "Use local Qwen 27B as a slow sanity-check circuit breaker for over
 
 # Qwen 27B Ground Check
 
-Use this skill when the user asks to ground, wobble-check, sanity-check, or make sure an answer is not just clever, especially with the local Qwen3.6-27B-Q4_K_M model. Use it sparingly for claims or judgements where a slow independent local pass is worth the delay.
+Use this skill when the user asks to ground, wobble-check, sanity-check, or make sure an answer is not just clever, especially with a local Qwen 27B-class model. Use it sparingly for claims or judgements where a slow independent local pass is worth the delay.
 
 ## Role
 
 Treat Qwen 27B as a circuit breaker, not an oracle. Its job is to add friction, catch overconfident phrasing, and force a second look at unsupported claims. Do not outsource judgement to it.
 
-Local Ollama model name:
+Default Ollama model name:
 
 ```text
 qwen3-6-27b:latest
 ```
 
+Override it with `QWEN27_MODEL` when the local model uses a different tag.
+
 Operational notes:
 
 - Treat this as a deliberately slow second-model check; latency depends heavily on local hardware and load.
 - Keep answers short by default so the checker remains a circuit breaker rather than a second full reasoning pass.
-- Prefer a validated raw wrapper configured through `QWEN27_WRAPPER`; template/chat paths that leak `<think>` blocks or stall should not be treated as healthy.
+- The bundled `scripts/qwen27_raw_chat.py` calls Ollama's raw generate API and avoids relying on the normal chat/template path.
+- Override the wrapper with `QWEN27_WRAPPER` only when a separately validated local wrapper is preferred.
 - Keep context small unless a larger context is genuinely needed; this checker should receive only the evidence needed for the claim under review.
 
 ## When To Use
@@ -90,14 +93,28 @@ Return a short final answer only.
 
 ## Command Pattern
 
-Use the bundled helper when available, or run the raw wrapper directly:
+Use the bundled helper:
 
 ```bash
-printf '%s\n' '<issue text>' | scripts/qwen27_ground_check.sh
-$QWEN27_WRAPPER '<short prompt>'
+printf '%s\n' '<issue text>' | bash scripts/qwen27_ground_check.sh
 ```
 
-Do not use a chat/template path for this model until it has been validated not to leak or stall in `<think>` mode. Prefer a raw wrapper with explicit generation controls where needed.
+Or call the bundled raw wrapper directly:
+
+```bash
+python3 scripts/qwen27_raw_chat.py '<short prompt>'
+```
+
+Useful overrides:
+
+```bash
+QWEN27_MODEL='another-local-tag' \
+QWEN27_MAX_TOKENS=64 \
+QWEN27_TEMP=0.2 \
+bash scripts/qwen27_ground_check.sh '<claim or issue>'
+```
+
+`OLLAMA_HOST` defaults to `http://127.0.0.1:11434`. If the raw wrapper returns an empty answer or an unterminated `<think>`/`<analysis>` block, treat the grounding pass as failed rather than accepting hidden-reasoning leakage as a result.
 
 ## Validation Note
 
