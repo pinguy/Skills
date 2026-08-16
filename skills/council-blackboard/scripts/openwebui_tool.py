@@ -28,8 +28,8 @@ COUNCIL = Path(
     )
 ).expanduser()
 PYTHON = os.environ.get("COUNCIL_PYTHON", sys.executable)
-ORNITH_MODEL_ID = os.environ.get("COUNCIL_ORNITH_WRITER", "ollama/ornith-35b-vision:latest")
-OPENCLAW_MODEL = os.environ.get("COUNCIL_OPENCLAW_MODEL", "openai/gpt-5.5")
+ORNITH_MODEL_ID = os.environ.get("COUNCIL_ORNITH_WRITER", "ollama/local-model:latest")
+OPENCLAW_MODEL = os.environ.get("COUNCIL_OPENCLAW_MODEL", "openai/gpt-5.6")
 OPENCLAW_WRITER_PREFIX = os.environ.get("COUNCIL_OPENCLAW_WRITER_PREFIX", "openai/")
 OPENCLAW_AGENT = os.environ.get("COUNCIL_OPENCLAW_AGENT", "main")
 OPENCLAW_THINKING = os.environ.get("COUNCIL_OPENCLAW_THINKING", "off")
@@ -177,7 +177,7 @@ def _binary(name: str, env_name: str) -> str:
 
 def _openclaw_prompt(board: Path, route_id: str, question: str) -> str:
     return (
-        "You are the OpenClaw member of a visible council with the local user and Open WebUI. "
+        "You are the OpenClaw member of a visible council with the user and the Open WebUI model. "
         "Use the blackboard skill and do exactly one bounded job. Validate and read the board, "
         "answer the routed question, and append only genuinely useful typed contributions. "
         "Do not overwrite entries, create another route, change policy, or send anything externally.\n\n"
