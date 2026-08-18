@@ -1,6 +1,6 @@
 # Skills
 
-Reusable agent skills for reliability-first technical work, multi-agent coordination, debugging, regression testing, privilege boundaries, handovers, and media operations.
+Reusable agent skills for reliability-first technical work, multi-agent coordination, debugging, regression testing, privilege boundaries, handovers, storage deduplication, and media operations.
 
 These are operational skills rather than prompt snippets: each one tries to define **when it applies, what evidence counts, what must not be damaged, how to verify success, and how to hand work off cleanly**.
 
@@ -15,9 +15,9 @@ These are operational skills rather than prompt snippets: each one tries to defi
 | `invariant-guarded-debugging` | Debugging workflow that protects known-good state and tests falsifiable hypotheses. |
 | `openwebui-regression-test` | Test Open WebUI through the real user-visible browser path rather than config-only checks. |
 | `privileged-operations` | Keep Linux root elevation narrow, visible and interactively approved by the user. |
-| `qwen27-ground-check` | Use a local Qwen 27B-class model as a cautious second-model circuit breaker, not an oracle. |
 | `risk-aware-retry` | Decide when to retry transient failures, change tactic, or stop based on risk and reversibility. |
 | `session-handover` | Compact shift-style continuity notes with receipts, hazards, protected targets and next action. |
+| `symlink-space-saver` | Safely reclaim duplicate storage with verified symlink, hard-link, or reflink decisions and real consumer acceptance tests. |
 | `video-clip-editor` | Deterministic `ffmpeg`/`ffprobe` clipping with exact-boundary verification. |
 
 ## Using the skills
@@ -72,15 +72,17 @@ The common thread across the collection is simple:
 
 Machine-specific paths and account identifiers are intentionally not included. Setup-specific skills use environment variables and normal home-relative defaults where practical.
 
-Some skills still describe particular software stacks (for example Open WebUI or a local Qwen checker). Treat those as reference implementations and adjust model IDs, service names and local paths for your environment.
+Some skills still describe particular software stacks or GNU/Linux tooling. Treat those as reference implementations and adjust service names, local paths, commands and platform-specific flags for your environment.
 
 `privileged-operations` is intentionally opinionated about the **human approval boundary**, not one universal elevation command. Root work stays unprivileged until necessary, the exact privileged action and reason should be visible to the user, and authentication must happen through an interactive path the user can see and control. It prefers `pkexec` on graphical desktops and permits `sudo`/`doas` only when their terminal prompt is genuinely user-visible.
+
+`symlink-space-saver` treats deduplication as a dependency change rather than a housekeeping trick. It checks whether apparent duplicates already share physical storage, identifies the lifecycle owner of the canonical copy, preserves rollback, and requires the real consumer to work before redundant storage is reclaimed.
 
 ## Runtime data and local configuration
 
 Live blackboards, council transcripts/state, lock files, backups, and `.env` files are intentionally excluded from this repository. The checked-in blackboard code creates runtime state as needed; do not commit an existing `blackboards/` directory from a working agent installation.
 
-The bundled Qwen ground-check wrapper uses only the Python standard library and expects an Ollama-compatible `/api/generate` endpoint. Council tooling additionally assumes an OpenClaw/Open WebUI installation and should be configured with the environment variables documented in that skill.
+Council tooling assumes an OpenClaw/Open WebUI installation and should be configured with the environment variables documented in that skill.
 
 The Chatterbox recovery skill deliberately does **not** duplicate backend source. Its canonical executable implementation is maintained in `pinguy/chatterbox-tts-addon`; the skill contains recovery invariants and acceptance checks only.
 
