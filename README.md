@@ -10,6 +10,7 @@ These are operational skills rather than prompt snippets: each one tries to defi
 | --- | --- |
 | `blackboard` | Typed shared state for multi-model or multi-agent work, with provenance, ownership and verification. |
 | `chatterbox-tts-recovery` | Restore and verify the Chatterbox browser/OpenAI-compatible TTS stack using the canonical add-on repository. |
+| `check-notes-first` | Reuse structurally similar prior solutions as hypotheses, verify them against current state, and record only the reusable delta. |
 | `council-blackboard` | Visible OpenClaw/Open WebUI council rooms backed by the typed blackboard. |
 | `invariant-guarded-debugging` | Debugging workflow that protects known-good state and tests falsifiable hypotheses. |
 | `openwebui-regression-test` | Test Open WebUI through the real user-visible browser path rather than config-only checks. |
