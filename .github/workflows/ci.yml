@@ -1,0 +1,47 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Check repository structure
+        run: python scripts/check_repo.py
+
+      - name: Compile Python sources
+        run: python -m compileall -q skills scripts
+
+      - name: Check shell syntax
+        shell: bash
+        run: |
+          set -euo pipefail
+          while IFS= read -r -d '' script; do
+            bash -n "$script"
+          done < <(find skills scripts -type f -name '*.sh' -print0)
+
+      - name: Smoke-test blackboard
+        shell: bash
+        run: |
+          set -euo pipefail
+          tmpdir="$(mktemp -d)"
+          trap 'rm -rf "$tmpdir"' EXIT
+          board="$tmpdir/board.json"
+          python skills/blackboard/scripts/blackboard.py init "$board" \
+            --goal "CI canary" \
+            --model "ci/test" \
+            --max-hops 2
+          python skills/blackboard/scripts/blackboard.py validate "$board"
