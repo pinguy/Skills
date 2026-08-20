@@ -29,6 +29,8 @@ These are operational skills rather than prompt snippets: each one tries to defi
 4. Let the skill control the workflow rather than copying isolated commands out of context. In particular, preserve its inspection, safety, verification and rollback steps.
 5. Run the skill's real canary or acceptance check where one is provided. A successful configuration change is not automatically a successful outcome.
 
+Do **not** preload the whole collection into model context. Keep the skill registry/frontmatter available, then load the triggered skill and only the references needed for the current phase. Detailed examples, old receipts, and specialist reference material are durable knowledge, not default working-set context.
+
 Agent runtimes discover skills differently, so there is intentionally no single hard-coded install path here. Point your runtime at the copied skill directory using that runtime's normal skill/plugin mechanism.
 
 To sanity-check a checkout of this repository itself:
