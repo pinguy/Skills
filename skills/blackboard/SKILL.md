@@ -32,13 +32,19 @@ Read blackboard → validate station state → claim one bounded job → attach 
 
 Never rewrite another contributor's entry. Append corrections or verification.
 
+### Context rule
+
+The append-only board is the durable audit record, not default prompt payload. Use `summary` for normal model turns and `route-results` for the current routed job. Use full `show` only for audit, recovery, or when the compact view is demonstrably insufficient.
+
+Do not keep old entries resident merely because they exist. Preserve them on the board and promote only the state needed for the current job into model context.
+
 ## Start
 
 Use `scripts/blackboard.py`; do not hand-edit a live board.
 
 ```bash
 python scripts/blackboard.py init BOARD.json --goal "..." --model "provider/model" --max-hops 6
-python scripts/blackboard.py show BOARD.json
+python scripts/blackboard.py summary BOARD.json
 ```
 
 The board owns `policy.max_hops`; later commands cannot override it. Mutations lock the board for the full load/validate/change/write transaction, increment `revision`, write atomically, and preserve a timestamped backup. Use `--expect-revision N` on mutations when the caller has read a particular revision.
