@@ -19,6 +19,7 @@ Use when the user asks to trim, cut, rename, or make a shareable clip from a loc
    - Use a clean, descriptive basename from the requested title/game, e.g. `clip-2026-08-16_01.00.00.mkv`.
    - Preserve the original file. If the output exists, use a suffix or ask before overwriting.
    - Default to `.mkv` for Matroska/WebM input or unknown/no-extension containers. Use `.mp4` only when codecs/container compatibility is intended.
+   - Keep the temporary file in the same intended container as the final output: use `.tmp.mkv` for Matroska and `.tmp.mp4` for MP4. Renaming a Matroska file to `.mp4` does not convert its container.
 
 3. Convert time ranges carefully:
    - If the user says `from A to B`, compute duration as `B - A` and use `-ss A -t duration`.
@@ -27,25 +28,27 @@ Use when the user asks to trim, cut, rename, or make a shareable clip from a loc
 4. Pick the cut method:
    - Fast/lossless attempt when approximate keyframe boundaries are acceptable:
      ```bash
-     ffmpeg -hide_banner -y -ss START -i INPUT -t DURATION -map 0 -c copy -avoid_negative_ts make_zero OUTPUT.tmp.mkv
+     ffmpeg -hide_banner -y -ss START -i INPUT -t DURATION -map 0 -c copy -avoid_negative_ts make_zero OUTPUT.tmp.CONTAINER
      ```
+   - `CONTAINER` must match the intended final container, for example `mkv` or `mp4`.
    - Always probe the result. If duration includes preroll, starts early, or misses the requested boundary, replace it with an accurate re-encode.
    - Accurate default for user-facing clips:
      ```bash
      ffmpeg -hide_banner -y -i INPUT -ss START -t DURATION -map 0 \
        -c:v libx264 -preset veryfast -crf 22 -pix_fmt yuv420p \
-       -c:a aac -b:a 128k OUTPUT.tmp.mkv
+       -c:a aac -b:a 128k OUTPUT.tmp.CONTAINER
      ```
    - Use `libx265` only when the user asks for HEVC/smaller output or the existing workflow clearly prefers HEVC; it is slower and may be less broadly shareable.
 
 5. Verify before reporting done:
-   - Probe duration, size, codecs, and dimensions:
+   - Probe duration, size, codecs, dimensions, and container:
      ```bash
-     ffprobe -hide_banner -show_entries format=duration,size:stream=index,codec_name,codec_type,width,height,avg_frame_rate \
-       -of default=noprint_wrappers=1 OUTPUT.tmp.mkv
+     ffprobe -hide_banner -show_entries format=format_name,duration,size:stream=index,codec_name,codec_type,width,height,avg_frame_rate \
+       -of default=noprint_wrappers=1 OUTPUT.tmp.CONTAINER
      ```
    - Check the duration is within normal encoder tolerance of the requested duration.
-   - If verification passes, move/rename the temp file to the final output path.
+   - Confirm the probed container matches the intended final extension.
+   - If verification passes, move/rename the temp file to the final output path without changing container type.
 
 6. Final response:
    - Give the final absolute path.
