@@ -1,6 +1,6 @@
 # Skills
 
-Reusable agent skills for reliability-first technical work, multi-agent coordination, debugging, regression testing, privilege boundaries, handovers, storage deduplication, and media operations.
+Reusable agent skills for reliability-first technical work, multi-agent coordination, debugging, regression testing, local-model runtime profiling, privilege boundaries, handovers, storage deduplication, and media operations.
 
 These are operational skills rather than prompt snippets: each one tries to define **when it applies, what evidence counts, what must not be damaged, how to verify success, and how to hand work off cleanly**.
 
@@ -13,6 +13,7 @@ These are operational skills rather than prompt snippets: each one tries to defi
 | `check-notes-first` | Reuse structurally similar prior solutions as hypotheses, verify them against current state, and record only the reusable delta. |
 | `council-blackboard` | Visible OpenClaw/Open WebUI council rooms backed by the typed blackboard. |
 | `invariant-guarded-debugging` | Debugging workflow that protects known-good state and tests falsifiable hypotheses. |
+| `local-model-runtime-profiler` | Benchmark and validate workload-specific local-model runtime profiles with reproducible receipts, context proof, lifecycle states, and real acceptance runs. |
 | `openwebui-regression-test` | Test Open WebUI through the real user-visible browser path rather than config-only checks. |
 | `privileged-operations` | Keep Linux root elevation narrow, visible and interactively approved by the user. |
 | `risk-aware-retry` | Decide when to retry transient failures, change tactic, or stop based on risk and reversibility. |
