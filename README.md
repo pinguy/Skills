@@ -39,7 +39,7 @@ To sanity-check a checkout of this repository itself:
 python scripts/check_repo.py
 ```
 
-GitHub Actions also runs repository structure checks, Python compilation, shell syntax checks, and a real blackboard initialise/validate canary on pushes and pull requests.
+GitHub Actions also runs repository structure checks, Python compilation, shell syntax checks, and blackboard safety-invariant canaries on pushes and pull requests.
 
 ## Layout
 
