@@ -13,3 +13,14 @@ blackboards/
 .env
 .env.*
 !.env.example
+
+# Local Python environments and UCS runtime output.
+.venv/
+venv/
+LLM_Memory.db
+LLM_Memory.db-*
+rlvr_audit.jsonl
+pdf_texts.json
+pdf_texts_simple.json
+pdf_texts_books.json
+pauselang_proposal.wav

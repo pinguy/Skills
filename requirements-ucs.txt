@@ -1,0 +1,10 @@
+# Optional runtime: not needed to use the operational skills.
+# CI targets Python 3.12. These are compatibility ranges, not a lockfile.
+numpy>=1.26,<3
+networkx>=3.2,<4
+torch>=2.2,<3
+gensim>=4.4,<5
+scikit-learn>=1.4,<2
+matplotlib>=3.8,<4
+pdfminer.six>=20231228
+PyMuPDF>=1.24,<2
