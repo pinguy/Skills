@@ -69,13 +69,14 @@ def main(argv=None):
         if not isinstance(context, dict):
             parser.error("context must be a JSON object")
 
-    from UnifiedCognitionSystem import UnifiedCognitionSystem
-
     callback = model_client(
         args.base_url, args.model, os.environ.get(args.api_key_env), args.timeout, args.max_tokens,
     ) if args.base_url and not args.handover else None
     # Keep stdout as one machine-readable JSON result, with diagnostics on stderr.
     with contextlib.redirect_stdout(sys.stderr):
+        # Optional runtime libraries can print notices during import too.
+        from UnifiedCognitionSystem import UnifiedCognitionSystem
+
         ucs = UnifiedCognitionSystem(
             memory_db_path=args.memory, blackboard_path=args.board, agent_callable=callback,
             writer_id=f"ucs/{args.model}" if args.model else "ucs/offline",
