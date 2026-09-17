@@ -23,7 +23,7 @@ jobs:
         run: python scripts/check_repo.py
 
       - name: Compile Python sources
-        run: python -m compileall -q UnifiedCognitionSystem.py skills scripts tests
+        run: python -m compileall -q UnifiedCognitionSystem.py ucs_runtime.py skills scripts tests
 
       - name: Check shell syntax
         shell: bash

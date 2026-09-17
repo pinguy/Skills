@@ -1,16 +1,16 @@
 # Unified Cognition System
 
-[`UnifiedCognitionSystem.py`](../UnifiedCognitionSystem.py) is a single-file experimental runtime. It combines model-independent expert coordination, persistent memory, verification and temporal-message experiments. The [README](../README.md#running-unified-cognition) covers installation and the offline demo.
+[`UnifiedCognitionSystem.py`](../UnifiedCognitionSystem.py) is an experimental runtime, with context and persistence adapters in [`ucs_runtime.py`](../ucs_runtime.py). It combines model-independent expert coordination, persistent memory, verification and temporal-message experiments. The [README](../README.md#running-unified-cognition) covers installation and the offline demo.
 
 ## Architecture and current boundaries
 
 | Component | Current behaviour | Boundary |
 | --- | --- | --- |
-| Operational skills | Procedures, invariants, helpers and acceptance checks under `skills/` | Loaded by the host agent; UCS has no skill loader |
+| Operational skills | Procedures, invariants, helpers and acceptance checks under `skills/` | UCS selects and loads entrypoints; the host executes tools and scripts |
 | `ABM_Orchestrator` | Popper, Polya, Feynman and Wiener roles contribute to bounded rounds, critique and synthesis | Built-in drafts unless a model callback is supplied; all four roles use the same callback by default |
 | `VerifiableRewardEngine` | Scores process, constraint and outcome checks; retains an exportable audit trace | A pass establishes only what the configured verifier checked |
-| Expert policy | A PyTorch replay learner with `gamma=0` learns reward estimates and influences expert ranking | Does not train the injected language model; every expert still contributes each round |
-| `EnhancedMemorySystem` | Stores memory records in SQLite with TF-IDF-based support for memory operations | This is not automatic retrieval-augmented prompting; `solve_with_abm()` stores its synthesis but does not fetch old memories into the prompt |
+| Expert policy | A PyTorch replay learner with `gamma=0` learns from outcome-checked contributions and influences expert ranking | Does not train the injected language model; every expert still contributes each round |
+| `EnhancedMemorySystem` | Stores memory in SQLite and recalls relevant priors before a solve | Bounded lexical retrieval over the newest 500 memories; historical content is labelled as fallible |
 | `RSCI_Enhanced` | Maintains a concept graph with embedding-based operations | Defaults to hash vectors; supply a trained Word2Vec-compatible model for semantic embeddings |
 | `SingularityMind` and trust-flow | Update concept dynamics and calculate flow state | Fractal training/validation metrics are simulated; the flow model is not a benchmark of agent reliability |
 | PDF processor | Extracts text and detects possible book/section boundaries | Explicit `process_pdfs()` call; extracted documents are not automatically ingested into memory or model context |
@@ -23,7 +23,7 @@ There are three separate blackboard uses here:
 - `ucs.blackboard` receives PauseLang proposals in memory.
 - [`skills/blackboard`](../skills/blackboard/SKILL.md) provides the durable typed board with provenance, ownership, protected-target checks and completion gates.
 
-These do not share storage or automatically enforce one another's rules. A host integration must explicitly transfer records and preserve provenance and permission boundaries. The council skill is an existing host-facing integration with the file-backed board, not a UCS adapter.
+Pass an existing typed board as `blackboard_path` to import current constraints and bounded recent context, then append the final synthesis and receipts through the board helper. Internal working boards stay in memory. PauseLang proposals remain transport data and are not promoted into user decisions or automatically acted on. A council host can pass its board through the same adapter; route ownership and the visible room transcript remain host responsibilities.
 
 ## Embed the runtime
 
@@ -62,9 +62,49 @@ with tempfile.TemporaryDirectory(prefix="ucs_example_") as directory:
         ucs.shutdown()
 ```
 
-The callback contract is synchronous `prompt: str -> str`. UCS supplies role, task, context, prior answer and a local draft. Configure endpoint, credentials, token limits and request timeout in your model client. The default round limit is four; it does not impose a timeout on a blocking callback. A callback exception or empty response falls back to the local draft and records a risk in that contribution. Inspect `report.contributions` when diagnosing a model connection.
+The callback contract is synchronous `prompt: str -> str`. UCS supplies role, task, context, prior answer and a local draft. Configure endpoint, credentials, token limits and request timeout in your model client. The default round limit is four; it does not impose a timeout on a blocking callback. A callback exception or empty response falls back to the local draft and records a risk, `generation_source="fallback"`, and a report warning. The CLI exits nonzero on fallback. Inspect `report.contributions` when diagnosing a model connection.
 
 Use `ucs.set_agent_callable(your_callable)` to replace the callback after construction. A `live_query_function(topic)` can separately return a dictionary containing `status`, `summary`, `source` and `timestamp`; source quality remains the adapter's responsibility.
+
+The CLI accepts `--context /path/to/context.json` for the same task context. For example, `{"rlvr": {"expected_numeric": 42}}` checks a numerical fixture. Treat context files containing executable verifiers as trusted code configuration. The client accepts `--timeout` and `--max-tokens`; without explicit outcome checks the report correctly remains process-only.
+
+## Skills, memory and the durable board
+
+`solve_with_abm()` prepares context before any model call:
+
+1. Read and validate the attached typed board. `needs_user`, `blocked` and `completed` prevent new work; protected board targets are rejected.
+2. Select up to two skills by lexical overlap with their names/descriptions and load their full `SKILL.md` bodies. Scripts/references are not automatically executed or loaded.
+3. Retrieve up to three relevant memories, with source IDs, dates, run IDs and evidence labels.
+4. Pass this context to every expert, then save the final report and append inference/evidence to the attached board.
+
+Use `skill_names=["check-notes-first", "invariant-guarded-debugging"]` on a solve to choose exact procedures. `skill_names=[]` disables selection for that call. `enable_skill_context=False` and `enable_memory_recall=False` disable the respective features at construction. The default registry is the repository's `skills/`; `skills_dir` can select another compatible registry.
+
+Skill bodies share a 24,000-character budget. Automatic selections that do not fit are named in `context_sources.omitted_skills` and report warnings; an explicit selection that cannot fit raises before model invocation. Memory recall has a 6,000-character budget, with 2,000 characters per content excerpt. Read a truncated prior through `retrieve_memory()` and its originating run receipt before reusing a procedure. Registry routing and memory recall are lexical heuristics, not semantic classification guarantees.
+
+Board context has a 16,000-character budget. User decisions, policy and active route ownership are preserved together; if they cannot fit, the solve fails rather than silently dropping constraints. Up to three recent entries from each relevant typed collection are included when they fit. Prompt instructions are not a replacement for a tool executor's permission checks.
+
+The runtime adds `_ucs` to a copy of the caller's context, leaving the supplied dictionary unchanged. `report.context_sources` records selected skill paths/hashes, memory IDs/timestamps and the input board revision. Model-generated text is never promoted into authenticated user decisions.
+
+### Board publication and recovery
+
+Create a board using the existing helper, then supply its path to UCS:
+
+```bash
+python skills/blackboard/scripts/blackboard.py init /path/to/board.json \
+  --goal "Investigate service restart failures" --model host/router
+python scripts/run_ucs.py --memory /path/to/memory.db --board /path/to/board.json \
+  --task "Investigate service restart failures"
+```
+
+Publication atomically appends a proposal to `inferences` and a receipt to `evidence`; hard verification failures also enter `failed_attempts`. It does not create an independent `PASS:`, change the task's status, claim a route, or bypass existing ownership/approval rules. The same mechanism works on council boards without posting to the visible room.
+
+The run is saved before publication. If the board revision changes during generation, UCS raises with the saved run ID. Inspect the changed board and reconcile whether the answer still applies, then call `ucs.publish_run(run_id, expected_revision=current_revision)`. This does not call the model or re-execute tests. An identical report/run ID is deduplicated; a conflicting report under that ID is rejected.
+
+`ucs.get_handover()` returns recent run summaries, evidence and current board context. A `finished` run means the report was saved, not that acceptance tests passed. A `failed` run records its error; a `running` run after interruption requires checking actual worker/side-effect state before retry. There is no automatic resumption or claim that an interrupted worker is still alive.
+
+### Learning and verification
+
+Expert confidence and policy replay now update only when an outcome verifier ran. Process structure and substring constraints alone cannot earn a reliability update. A hard-check failure supplies zero policy reward even when another outcome check passes. The verifier's scope still matters: parsing code is a narrower outcome than executing meaningful task tests.
 
 ## Read the evidence correctly
 
@@ -85,13 +125,13 @@ For deterministic task checks, use `ucs.register_rlvr_verifier(name, callback, h
 
 `context["rlvr"]["executable_tests"]` supports command lists, temporary fixture files, timeouts, expected exit codes and output patterns. Those commands can execute the candidate code with the current user's access and inherited environment. The runner is not a security sandbox. Use a restricted external executor for untrusted code; the bundled demo and regression checks use small trusted fixtures.
 
-Call `ucs.export_rlvr_audit(path)` to save the full verifier trace. Keep the report or audit with a result when its verification scope matters: the synthesis's SQLite memory metadata currently preserves only selected report fields.
+Call `ucs.export_rlvr_audit(path)` to save the full verifier trace. Every solve also saves its complete report, including all contribution verifier results, under a unique `run_id` in SQLite's `ucs_runs` table. `ucs.run_journal.get(run_id)` retrieves it. Memory metadata retains the run ID and final evidence scope/results.
 
 ## Persistence and lifecycle
 
 Pass an explicit `memory_db_path` to retain memory between instances, and create its parent directory first. With no path, UCS writes `LLM_Memory.db` in the working directory. The demonstration's temporary directory is intentionally discarded.
 
-Only the SQLite memory is persisted automatically. Concept graphs, blackboards, confidence counts, audit log and expert-policy weights are in memory. Restarting UCS does not resume those components. Export audits before shutdown when needed, and keep runtime output outside the checkout.
+SQLite memories and run reports are persisted automatically; an attached typed board is durable too. Concept graphs, internal blackboards, confidence counts, the in-memory audit log and expert-policy weights are not restored on restart. Saved reports preserve the verifier evidence from each solve. Export standalone audits when needed, and keep runtime output outside the checkout.
 
 Use `try/finally` and call `ucs.shutdown()` to stop the transport receiver and close the database. Constructors seed Python, NumPy and PyTorch's global random generators; creating an instance can therefore affect other randomised work in the same process.
 
@@ -121,11 +161,11 @@ From the repository root with UCS requirements installed:
 
 ```bash
 python scripts/check_repo.py
-python -m compileall -q UnifiedCognitionSystem.py skills scripts tests
+python -m compileall -q UnifiedCognitionSystem.py ucs_runtime.py skills scripts tests
 python UnifiedCognitionSystem.py
 python -m unittest discover -s tests -v
 ```
 
-The test suite checks callback integration, memory reopening, unavailable fact checking, evidence separation, passing and failing executable verifiers, PauseLang message reconstruction and corruption rejection. It also runs the embedded VM torture suite and fails if that suite reports any failure.
+The test suite checks selective skill loading, cross-session memory recall, board constraints and revision conflicts, retry-free receipt publication, outcome-only policy learning, a local HTTP model fixture, CLI handovers, callback integration, memory reopening, unavailable fact checking, evidence separation, passing and failing executable verifiers, PauseLang message reconstruction and corruption rejection. It also runs the embedded VM torture suite and fails if that suite reports any failure.
 
 The demo prints diagnostic text around its JSON summary; its entire stdout is not one JSON document. CI runs it separately from the assertions. These checks cover runtime plumbing and selected failure paths, not model quality, autonomous task success or scientific claims about cognition.
