@@ -2,7 +2,7 @@
 
 An agent workbench with three complementary layers: an always-on **operational framework**, reusable **task skills**, and an experimental **Unified Cognition System (UCS)** for coordinating reasoning, memory and verification.
 
-[`FRAMEWORK.md`](FRAMEWORK.md) defines the decision contract: the five-rule pipeline, evidence discipline, human-agency boundary, memory trust model, mutation rules and response closure. UCS loads the bounded [`framework/CORE.md`](framework/CORE.md) on every solve so those invariants do not depend on lexical skill routing.
+[`FRAMEWORK.md`](FRAMEWORK.md) defines the decision contract: the five-rule pipeline, evidence discipline, human-agency boundary, memory trust model, mutation rules and response closure. UCS loads the bounded [`framework/CORE.md`](framework/CORE.md) on every solve so those invariants do not depend on lexical skill routing. The runtime validates the rule order and core authority/agency boundaries before any model call, and records a machine-readable contract receipt with the framework hash.
 
 The operational skills define repeatable working procedures: each one tries to define **when it applies, what evidence counts, what must not be damaged, how to verify success, and how to hand work off cleanly**.
 
