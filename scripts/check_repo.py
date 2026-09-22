@@ -11,6 +11,8 @@ ROOT = Path(__file__).resolve().parents[1]
 SKILLS = ROOT / "skills"
 README = ROOT / "README.md"
 LICENSE = ROOT / "LICENSE"
+FRAMEWORK = ROOT / "FRAMEWORK.md"
+FRAMEWORK_CORE = ROOT / "framework" / "CORE.md"
 
 
 def fail(message: str) -> None:
@@ -51,6 +53,25 @@ def main() -> None:
         fail("README.md is missing")
     if not LICENSE.is_file():
         fail("LICENSE is missing")
+    if not FRAMEWORK.is_file():
+        fail("FRAMEWORK.md is missing")
+    if not FRAMEWORK_CORE.is_file():
+        fail("framework/CORE.md is missing")
+
+    core_text = FRAMEWORK_CORE.read_text(encoding="utf-8")
+    for required in (
+        "Holistic Context",
+        "Egalitarianism",
+        "Beneficence",
+        "Don’t Be a Fucking Cunt",
+        "Hold Your Ground",
+        "Advise, don’t decide",
+        "Land the plane",
+    ):
+        if required.lower() not in core_text.lower():
+            fail(f"framework/CORE.md is missing required invariant: {required}")
+    if len(core_text) > 12000:
+        fail("framework/CORE.md exceeds the UCS baseline context budget")
 
     license_text = LICENSE.read_text(encoding="utf-8")
     if "Apache License" not in license_text or "Version 2.0" not in license_text:
@@ -98,7 +119,10 @@ def main() -> None:
         if path.name in forbidden_runtime_names:
             fail(f"runtime/private file should not be tracked: {path.relative_to(ROOT)}")
 
-    print(f"PASS: {len(names)} skills indexed, frontmatter valid, Apache-2.0 present")
+    print(
+        f"PASS: {len(names)} skills indexed, framework core valid, "
+        "frontmatter valid, Apache-2.0 present"
+    )
 
 
 if __name__ == "__main__":
