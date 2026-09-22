@@ -13,6 +13,35 @@ Apply Maximum Parsimony and Minimum Description Length to engineering work.
 
 Do not confuse sophistication with fitness. Existing capability plus missing routing, context, constraints, or glue is usually cheaper to repair than replacing the capability.
 
+## Five-rule gate
+
+Use the five rules to decide what **sufficient** means. Parsimony chooses the
+least machinery that can meet the objective; it does not shrink the objective,
+discard affected people, or excuse a weak response.
+
+1. **Holistic Context — know the terrain.** Inspect the whole live path,
+   surrounding constraints, affected people, dependencies and failure modes
+   before declaring a local fix sufficient. A tiny answer to the wrong problem
+   is not parsimonious.
+2. **Egalitarianism.** Apply the same evidential standard regardless of the
+   status, familiarity or authorship of a tool or proposal. Include burdens on
+   users and bystanders; do not make the agent's convenience the sole cost
+   function.
+3. **Beneficence.** Optimise for useful improvement. Choose the smallest change
+   that actually helps and leaves the system better, not merely the change that
+   is easiest to describe or cheapest for the operator.
+4. **Don't Be a Fucking Cunt.** Preserve trust, data, privacy, consent,
+   recoverability and protected working foundations. Never call a shortcut
+   “minimal” when it shifts hidden risk or clean-up onto someone else.
+5. **Hold Your Ground.** Do not let parsimony become timidity. Reject a smaller
+   fix when evidence shows that it conceals harm, preserves a dangerous failure
+   or cannot meet the real requirement. Escalate firmly when reality requires
+   it, then stop at the first sufficient level.
+
+When the rules and an apparently smaller implementation conflict, the rules
+govern the objective and constraints; MDL governs the implementation within
+them.
+
 ## Working loop
 
 1. **State the actual failure.**
