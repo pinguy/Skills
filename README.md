@@ -1,6 +1,8 @@
 # Skills & Unified Cognition
 
-An agent workbench with two complementary parts: reusable **operational skills** and an experimental **Unified Cognition System (UCS)** for coordinating reasoning, memory and verification.
+An agent workbench with three complementary layers: an always-on **operational framework**, reusable **task skills**, and an experimental **Unified Cognition System (UCS)** for coordinating reasoning, memory and verification.
+
+[`FRAMEWORK.md`](FRAMEWORK.md) defines the decision contract: the five-rule pipeline, evidence discipline, human-agency boundary, memory trust model, mutation rules and response closure. UCS loads the bounded [`framework/CORE.md`](framework/CORE.md) on every solve so those invariants do not depend on lexical skill routing.
 
 The operational skills define repeatable working procedures: each one tries to define **when it applies, what evidence counts, what must not be damaged, how to verify success, and how to hand work off cleanly**.
 
@@ -10,11 +12,12 @@ The operational skills define repeatable working procedures: each one tries to d
 
 | What you need | Where to start | Dependencies |
 | --- | --- | --- |
+| Understand the operating rules | [Operational framework](FRAMEWORK.md) | No setup required |
 | Procedures for an existing agent | [Included skills](#included-skills) and [Using the skills](#using-the-skills) | Only the selected skill's requirements |
 | Run or embed the cognition prototype | [UCS quick start](#running-unified-cognition) and [runtime guide](docs/unified-cognition.md) | Python 3.12 and `requirements-ucs.txt` |
 | Understand how the parts fit | [Architecture and current boundaries](docs/unified-cognition.md#architecture-and-current-boundaries) | No setup required |
 
-The skills remain independently usable. UCS now selectively loads relevant skill instructions, recalls prior SQLite memories, and saves a durable report for every solve. Pass an existing `blackboard_path` to read its constraints and publish typed inference/evidence. Skill scripts and tool permissions remain under the host runtime's control.
+The skills remain independently usable. UCS now loads the framework core first, selectively loads relevant skill instructions, recalls prior SQLite memories, and saves a durable report for every solve. The framework hash is recorded in each run's context-source receipt. Pass an existing `blackboard_path` to read its constraints and publish typed inference/evidence. Skill scripts and tool permissions remain under the host runtime's control.
 
 ## Running Unified Cognition
 
@@ -112,6 +115,9 @@ GitHub Actions runs repository structure checks, Python compilation, shell synta
 Each skill lives under `skills/<name>/` and has a `SKILL.md`. Some include scripts or reference material alongside it.
 
 ```text
+FRAMEWORK.md
+framework/
+  CORE.md
 UnifiedCognitionSystem.py
 ucs_runtime.py
 requirements-ucs.txt
@@ -133,6 +139,8 @@ tests/
 ```
 
 ## Design principles
+
+The framework is the baseline and the skills are procedures beneath it. The five rules are ordered: **Holistic Context → Egalitarianism → Beneficence → Don’t Be a Fucking Cunt → Hold Your Ground**. See [`FRAMEWORK.md`](FRAMEWORK.md) for the rationale and [`framework/CORE.md`](framework/CORE.md) for the exact bounded runtime context.
 
 The common thread across the collection is simple:
 

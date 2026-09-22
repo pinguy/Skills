@@ -27,6 +27,31 @@ def words(text):
     return set(re.findall(r"[a-z0-9][a-z0-9_-]{2,}", text.lower())) - stop
 
 
+class FrameworkPolicy:
+    """Load the bounded baseline policy that applies to every UCS solve."""
+
+    def __init__(self, path=None, max_chars=12000):
+        default = ROOT / "framework" / "CORE.md"
+        self.path = Path(path if path is not None else default).expanduser().resolve()
+        self.max_chars = int(max_chars)
+        if self.max_chars <= 0:
+            raise ValueError("framework context budget must be positive")
+        if not self.path.is_file():
+            raise FileNotFoundError(f"framework policy does not exist: {self.path}")
+
+    def load(self):
+        text = self.path.read_text(encoding="utf-8")
+        if len(text) > self.max_chars:
+            raise ValueError(
+                f"framework policy exceeds context budget: {len(text)} > {self.max_chars}"
+            )
+        return {
+            "path": str(self.path),
+            "sha256": hashlib.sha256(text.encode()).hexdigest(),
+            "instructions": text,
+        }
+
+
 class SkillRegistry:
     """Index frontmatter, then load whole selected entrypoints within a budget."""
 
