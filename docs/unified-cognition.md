@@ -6,6 +6,7 @@
 
 | Component | Current behaviour | Boundary |
 | --- | --- | --- |
+| Operational framework | Loads [`framework/CORE.md`](../framework/CORE.md) into every solve and records its SHA-256 in the run receipt | Baseline policy context only; it cannot grant tool permission or replace host/runtime safety boundaries |
 | Operational skills | Procedures, invariants, helpers and acceptance checks under `skills/` | UCS selects and loads entrypoints; the host executes tools and scripts |
 | `ABM_Orchestrator` | Popper, Polya, Feynman and Wiener roles contribute to bounded rounds, critique and synthesis | Built-in drafts unless a model callback is supplied; all four roles use the same callback by default |
 | `VerifiableRewardEngine` | Scores process, constraint and outcome checks; retains an exportable audit trace | A pass establishes only what the configured verifier checked |
@@ -72,18 +73,21 @@ The CLI accepts `--context /path/to/context.json` for the same task context. For
 
 `solve_with_abm()` prepares context before any model call:
 
-1. Read and validate the attached typed board. `needs_user`, `blocked` and `completed` prevent new work; protected board targets are rejected.
-2. Select up to two skills by lexical overlap with their names/descriptions and load their full `SKILL.md` bodies. Scripts/references are not automatically executed or loaded.
-3. Retrieve up to three relevant memories, with source IDs, dates, run IDs and evidence labels.
-4. Pass this context to every expert, then save the final report and append inference/evidence to the attached board.
+1. Load the bounded operational core. It is a separate baseline layer, not a selectable skill.
+2. Read and validate the attached typed board. `needs_user`, `blocked` and `completed` prevent new work; protected board targets are rejected.
+3. Select up to two skills by lexical overlap with their names/descriptions and load their full `SKILL.md` bodies. Scripts/references are not automatically executed or loaded.
+4. Retrieve up to three relevant memories, with source IDs, dates, run IDs and evidence labels.
+5. Pass this context to every expert, then save the final report and append inference/evidence to the attached board.
 
 Use `skill_names=["check-notes-first", "invariant-guarded-debugging"]` on a solve to choose exact procedures. `skill_names=[]` disables selection for that call. `enable_skill_context=False` and `enable_memory_recall=False` disable the respective features at construction. The default registry is the repository's `skills/`; `skills_dir` can select another compatible registry.
+
+The framework has its own 12,000-character budget and defaults to `framework/CORE.md`. Supply `framework_path=/path/to/core.md` to use an explicit compatible policy file. `enable_framework_context=False` is an explicit opt-out for hosts that supply an equivalent baseline elsewhere. Oversized or missing framework files fail before model invocation rather than silently dropping policy context.
 
 Skill bodies share a 24,000-character budget. Automatic selections that do not fit are named in `context_sources.omitted_skills` and report warnings; an explicit selection that cannot fit raises before model invocation. Memory recall has a 6,000-character budget, with 2,000 characters per content excerpt. Read a truncated prior through `retrieve_memory()` and its originating run receipt before reusing a procedure. Registry routing and memory recall are lexical heuristics, not semantic classification guarantees.
 
 Board context has a 16,000-character budget. User decisions, policy and active route ownership are preserved together; if they cannot fit, the solve fails rather than silently dropping constraints. Up to three recent entries from each relevant typed collection are included when they fit. Prompt instructions are not a replacement for a tool executor's permission checks.
 
-The runtime adds `_ucs` to a copy of the caller's context, leaving the supplied dictionary unchanged. `report.context_sources` records selected skill paths/hashes, memory IDs/timestamps and the input board revision. Model-generated text is never promoted into authenticated user decisions.
+The runtime adds `_ucs` to a copy of the caller's context, leaving the supplied dictionary unchanged. `_ucs.framework` carries the baseline policy; `_ucs.precedence` states how framework, authenticated task constraints, skills and fallible history relate. `report.context_sources` records the framework path/hash, selected skill paths/hashes, memory IDs/timestamps and the input board revision. Model-generated text is never promoted into authenticated user decisions.
 
 ### Board publication and recovery
 
@@ -166,6 +170,6 @@ python UnifiedCognitionSystem.py
 python -m unittest discover -s tests -v
 ```
 
-The test suite checks selective skill loading, cross-session memory recall, board constraints and revision conflicts, retry-free receipt publication, outcome-only policy learning, a local HTTP model fixture, CLI handovers, callback integration, memory reopening, unavailable fact checking, evidence separation, passing and failing executable verifiers, PauseLang message reconstruction and corruption rejection. It also runs the embedded VM torture suite and fails if that suite reports any failure.
+The test suite checks always-on framework loading and hashing, selective skill loading, cross-session memory recall, board constraints and revision conflicts, retry-free receipt publication, outcome-only policy learning, a local HTTP model fixture, CLI handovers, callback integration, memory reopening, unavailable fact checking, evidence separation, passing and failing executable verifiers, PauseLang message reconstruction and corruption rejection. It also runs the embedded VM torture suite and fails if that suite reports any failure.
 
 The demo prints diagnostic text around its JSON summary; its entire stdout is not one JSON document. CI runs it separately from the assertions. These checks cover runtime plumbing and selected failure paths, not model quality, autonomous task success or scientific claims about cognition.
