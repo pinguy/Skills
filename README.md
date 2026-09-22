@@ -75,7 +75,7 @@ See the [integration guide](docs/unified-cognition.md#skills-memory-and-the-dura
 | `council-blackboard` | Visible OpenClaw/Open WebUI council rooms backed by the typed blackboard. |
 | `invariant-guarded-debugging` | Debugging workflow that protects known-good state and tests falsifiable hypotheses. |
 | `local-model-runtime-profiler` | Benchmark and validate workload-specific local-model runtime profiles with reproducible receipts, context proof, lifecycle states, and real acceptance runs. |
-| `minimum-sufficient-change` | Prevent over-solving by using the smallest plausible fix, proving it end to end, and escalating only when evidence requires it. |
+| `minimum-sufficient-change` | Complete the requested outcome with the least complex sufficient change, guided by the five rules and verified through the real path and relevant failure cases. |
 | `openwebui-regression-test` | Test Open WebUI through the real user-visible browser path rather than config-only checks. |
 | `privileged-operations` | Keep Linux root elevation narrow, visible and interactively approved by the user. |
 | `risk-aware-retry` | Decide when to retry transient failures, change tactic, or stop based on risk and reversibility. |
