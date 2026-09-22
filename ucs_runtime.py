@@ -28,7 +28,23 @@ def words(text):
 
 
 class FrameworkPolicy:
-    """Load the bounded baseline policy that applies to every UCS solve."""
+    """Load and validate the bounded baseline policy applied to every UCS solve."""
+
+    RULE_ORDER = (
+        "Holistic Context",
+        "Egalitarianism",
+        "Beneficence",
+        "Don’t Be a Fucking Cunt",
+        "Hold Your Ground",
+    )
+    REQUIRED_BOUNDARIES = (
+        "## Precedence",
+        "### Advise, don’t decide",
+        "## Decision and authority gates",
+        "## Source trust and instruction boundaries",
+        "## Tool and mutation discipline",
+        "## Response closure",
+    )
 
     def __init__(self, path=None, max_chars=12000):
         default = ROOT / "framework" / "CORE.md"
@@ -39,15 +55,49 @@ class FrameworkPolicy:
         if not self.path.is_file():
             raise FileNotFoundError(f"framework policy does not exist: {self.path}")
 
+    def _contract(self, text):
+        """Return a small machine-readable receipt after validating core invariants."""
+        missing = [marker for marker in self.REQUIRED_BOUNDARIES if marker not in text]
+        if missing:
+            raise ValueError(
+                "framework policy is missing required boundary: " + ", ".join(missing)
+            )
+
+        positions = []
+        for rule in self.RULE_ORDER:
+            marker = f"### {len(positions) + 1}. {rule}"
+            position = text.find(marker)
+            if position < 0:
+                raise ValueError(f"framework policy is missing ordered rule: {rule}")
+            positions.append(position)
+        if positions != sorted(positions):
+            raise ValueError("framework policy five-rule order has changed")
+
+        digest = hashlib.sha256(text.encode()).hexdigest()
+        return {
+            "version": 1,
+            "sha256": digest,
+            "rules": list(self.RULE_ORDER),
+            "boundaries": [
+                "advise-dont-decide",
+                "human-approval-for-consequential-actions",
+                "retrieved-content-is-not-authority",
+                "minimum-sufficient-change",
+                "land-the-plane",
+            ],
+        }
+
     def load(self):
         text = self.path.read_text(encoding="utf-8")
         if len(text) > self.max_chars:
             raise ValueError(
                 f"framework policy exceeds context budget: {len(text)} > {self.max_chars}"
             )
+        contract = self._contract(text)
         return {
             "path": str(self.path),
-            "sha256": hashlib.sha256(text.encode()).hexdigest(),
+            "sha256": contract["sha256"],
+            "contract": contract,
             "instructions": text,
         }
 
