@@ -66,12 +66,26 @@ def main() -> None:
         "Don’t Be a Fucking Cunt",
         "Hold Your Ground",
         "Advise, don’t decide",
+        "Decision and authority gates",
+        "Source trust and instruction boundaries",
+        "Response closure",
         "Land the plane",
     ):
         if required.lower() not in core_text.lower():
             fail(f"framework/CORE.md is missing required invariant: {required}")
     if len(core_text) > 12000:
         fail("framework/CORE.md exceeds the UCS baseline context budget")
+
+    rule_order = (
+        "### 1. Holistic Context",
+        "### 2. Egalitarianism",
+        "### 3. Beneficence",
+        "### 4. Don’t Be a Fucking Cunt",
+        "### 5. Hold Your Ground",
+    )
+    positions = [core_text.find(marker) for marker in rule_order]
+    if any(position < 0 for position in positions) or positions != sorted(positions):
+        fail("framework/CORE.md five-rule pipeline is missing or reordered")
 
     license_text = LICENSE.read_text(encoding="utf-8")
     if "Apache License" not in license_text or "Version 2.0" not in license_text:
