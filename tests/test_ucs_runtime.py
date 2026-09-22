@@ -79,11 +79,27 @@ class RuntimeTests(unittest.TestCase):
 
     def test_framework_is_baseline_bounded_and_explicitly_disableable(self):
         custom = self.root / "core.md"
-        custom.write_text("# Fixture Framework\nFRAMEWORK-MARKER\n")
+        custom.write_text(
+            "# Fixture Framework\n"
+            "FRAMEWORK-MARKER\n"
+            "## Precedence\n"
+            "### 1. Holistic Context\n"
+            "### 2. Egalitarianism\n"
+            "### 3. Beneficence\n"
+            "### 4. Don’t Be a Fucking Cunt\n"
+            "### 5. Hold Your Ground\n"
+            "### Advise, don’t decide\n"
+            "## Decision and authority gates\n"
+            "## Source trust and instruction boundaries\n"
+            "## Tool and mutation discipline\n"
+            "## Response closure\n"
+        )
         policy = FrameworkPolicy(custom)
         loaded = policy.load()
         self.assertEqual(loaded["instructions"], custom.read_text())
         self.assertEqual(len(loaded["sha256"]), 64)
+        self.assertEqual(loaded["contract"]["rules"], list(FrameworkPolicy.RULE_ORDER))
+        self.assertEqual(loaded["contract"]["sha256"], loaded["sha256"])
         with self.assertRaisesRegex(ValueError, "context budget"):
             FrameworkPolicy(custom, max_chars=5).load()
 
@@ -96,6 +112,10 @@ class RuntimeTests(unittest.TestCase):
             report = ucs.solve_with_abm("Debug network retry failures", return_report=True)
             self.assertIn("FRAMEWORK-MARKER", prompts[0])
             self.assertEqual(report.context_sources["framework"]["sha256"], loaded["sha256"])
+            self.assertEqual(
+                report.context_sources["framework"]["contract"]["rules"],
+                list(FrameworkPolicy.RULE_ORDER),
+            )
         finally:
             ucs.shutdown()
 
@@ -110,6 +130,29 @@ class RuntimeTests(unittest.TestCase):
             self.assertNotIn("Holistic Context", disabled_prompts[0])
         finally:
             disabled.shutdown()
+
+    def test_framework_rejects_missing_or_reordered_invariants(self):
+        missing = self.root / "missing-core.md"
+        missing.write_text("# nope\n")
+        with self.assertRaisesRegex(ValueError, "missing required boundary"):
+            FrameworkPolicy(missing).load()
+
+        reordered = self.root / "reordered-core.md"
+        reordered.write_text(
+            "## Precedence\n"
+            "### 2. Egalitarianism\n"
+            "### 1. Holistic Context\n"
+            "### 3. Beneficence\n"
+            "### 4. Don’t Be a Fucking Cunt\n"
+            "### 5. Hold Your Ground\n"
+            "### Advise, don’t decide\n"
+            "## Decision and authority gates\n"
+            "## Source trust and instruction boundaries\n"
+            "## Tool and mutation discipline\n"
+            "## Response closure\n"
+        )
+        with self.assertRaisesRegex(ValueError, "five-rule order"):
+            FrameworkPolicy(reordered).load()
 
     def test_registry_budget_and_path_boundaries(self):
         registry = SkillRegistry(self.skills)
