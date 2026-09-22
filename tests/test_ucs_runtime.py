@@ -11,7 +11,7 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 import unittest
 
 from UnifiedCognitionSystem import ABM_Orchestrator, UnifiedCognitionSystem
-from ucs_runtime import DurableBlackboard, SkillRegistry
+from ucs_runtime import DurableBlackboard, FrameworkPolicy, SkillRegistry
 
 
 class RuntimeTests(unittest.TestCase):
@@ -62,9 +62,13 @@ class RuntimeTests(unittest.TestCase):
         try:
             current = second.solve_with_abm("Debug network retry failures again", return_report=True)
             self.assertTrue(prompts)
+            self.assertIn("Holistic Context", prompts[0])
+            self.assertIn("Hold Your Ground", prompts[0])
             self.assertIn("Marker: debug-retry", prompts[0])
             self.assertNotIn("Marker: video-edit", prompts[0])
             self.assertIn("known socket timeout fix", prompts[0])
+            self.assertIsNotNone(current.context_sources["framework"])
+            self.assertEqual(len(current.context_sources["framework"]["sha256"]), 64)
             self.assertEqual(current.context_sources["memories"][0]["run_id"], prior.run_id)
             self.assertEqual(current.context_sources["memories"][0]["verification_scope"], "process")
             saved = second.run_journal.get(prior.run_id)
@@ -72,6 +76,40 @@ class RuntimeTests(unittest.TestCase):
             self.assertEqual(len(second.get_handover()["runs"]), 2)
         finally:
             second.shutdown()
+
+    def test_framework_is_baseline_bounded_and_explicitly_disableable(self):
+        custom = self.root / "core.md"
+        custom.write_text("# Fixture Framework\nFRAMEWORK-MARKER\n")
+        policy = FrameworkPolicy(custom)
+        loaded = policy.load()
+        self.assertEqual(loaded["instructions"], custom.read_text())
+        self.assertEqual(len(loaded["sha256"]), 64)
+        with self.assertRaisesRegex(ValueError, "context budget"):
+            FrameworkPolicy(custom, max_chars=5).load()
+
+        prompts = []
+        ucs = self.ucs(
+            framework_path=custom,
+            agent_callable=lambda prompt: prompts.append(prompt) or "fixture",
+        )
+        try:
+            report = ucs.solve_with_abm("Debug network retry failures", return_report=True)
+            self.assertIn("FRAMEWORK-MARKER", prompts[0])
+            self.assertEqual(report.context_sources["framework"]["sha256"], loaded["sha256"])
+        finally:
+            ucs.shutdown()
+
+        disabled_prompts = []
+        disabled = self.ucs(
+            enable_framework_context=False,
+            agent_callable=lambda prompt: disabled_prompts.append(prompt) or "fixture",
+        )
+        try:
+            report = disabled.solve_with_abm("Debug network retry failures", return_report=True)
+            self.assertIsNone(report.context_sources["framework"])
+            self.assertNotIn("Holistic Context", disabled_prompts[0])
+        finally:
+            disabled.shutdown()
 
     def test_registry_budget_and_path_boundaries(self):
         registry = SkillRegistry(self.skills)
